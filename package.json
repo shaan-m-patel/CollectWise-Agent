@@ -5,7 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
-    "ingest": "node src/ingest.js"
+    "ingest": "node src/ingest.js --file data/atlas_inventory.csv"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",

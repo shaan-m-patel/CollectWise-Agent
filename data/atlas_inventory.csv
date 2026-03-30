@@ -1,0 +1,9 @@
+account_number,debtor_name,phone_number,balance,status,client_name
+ACC001,John Smith,4045550101,1250.00,Active,Atlas Recovery
+ACC002,Jane Doe,4045550102,875.50,Active,Atlas Recovery
+ACC003,Bob Johnson,4045550103,,Active,Atlas Recovery
+ACC004,Alice Brown,4045550104,3400.00,Closed,Atlas Recovery
+ACC001,John Smith,4045550101,1300.00,Active,Atlas Recovery
+ACC005,Carlos Rivera,4045550105,notanumber,Active,Atlas Recovery
+ACC006,Emily Chen,4045550106,620.75,Active,Atlas Recovery
+,Missing Account,,500.00,Active,Atlas Recovery

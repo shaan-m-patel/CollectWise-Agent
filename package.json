@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node src/server.js",
-    "ingest": "node src/ingest.js --file data/atlas_inventory.csv"
+    "ingest": "node src/ingest.js --file data/atlas_inventory.csv",
+    "start:prod": "node src/start.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",

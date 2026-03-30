@@ -20,40 +20,22 @@ function normalizeText(value) {
   return trimmedValue === '' ? null : trimmedValue
 }
 
-function main() {
-  const csvFilePathArg = getFilePathFromArgs(process.argv.slice(2))
-
-  if (!csvFilePathArg) {
-    console.error('[INGEST] Missing required --file flag')
-    process.exit(1)
-  }
-
-  const csvFilePath = path.resolve(process.cwd(), csvFilePathArg)
+function runIngest(filePath) {
+  const csvFilePath = path.resolve(process.cwd(), filePath)
 
   if (!fs.existsSync(csvFilePath)) {
-    console.error(`[INGEST] File not found: ${csvFilePathArg}`)
-    process.exit(1)
+    throw new Error(`File not found: ${filePath}`)
   }
 
   let csvContent
-  try {
-    csvContent = fs.readFileSync(csvFilePath, 'utf8')
-  } catch (error) {
-    console.error(`[INGEST] Failed to read file: ${error.message}`)
-    process.exit(1)
-  }
+  csvContent = fs.readFileSync(csvFilePath, 'utf8')
 
   let rows
-  try {
-    rows = parse(csvContent, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true
-    })
-  } catch (error) {
-    console.error(`[INGEST] Failed to parse CSV: ${error.message}`)
-    process.exit(1)
-  }
+  rows = parse(csvContent, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true
+  })
 
   const db = getDb()
   const upsertStatement = db.prepare(`
@@ -64,7 +46,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
 
   let ingestedRows = 0
   let skippedRows = 0
-
 
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index]
@@ -113,6 +94,29 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
   }
 
   console.log(`Ingested ${ingestedRows} rows, skipped ${skippedRows} rows`)
+
+  return { ingestedRows, skippedRows }
 }
 
-main()
+function main() {
+  const csvFilePathArg = getFilePathFromArgs(process.argv.slice(2))
+
+  if (!csvFilePathArg) {
+    console.error('[INGEST] Missing required --file flag')
+    process.exit(1)
+  }
+
+  try {
+    runIngest(csvFilePathArg)
+    process.exit(0)
+  } catch (error) {
+    console.error(`[INGEST] ${error.message}`)
+    process.exit(1)
+  }
+}
+
+if (require.main === module) {
+  main()
+}
+
+module.exports = { runIngest }

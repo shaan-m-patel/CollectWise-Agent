@@ -1,0 +1,24 @@
+{
+  "name": "lookup_account",
+  "description": "Looks up a debtor account by account number during a call and returns account details or a not-found error.",
+  "url": "https://web-production-7c32.up.railway.app/accounts/{{account_number}}",
+  "method": "GET",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "account_number": {
+        "type": "string",
+        "description": "The caller's account number to look up, captured exactly as spoken or entered."
+      }
+    },
+    "required": ["account_number"]
+  },
+  "response_mapping": {
+    "account_number": "$.account_number",
+    "debtor_name": "$.debtor_name",
+    "balance": "$.balance",
+    "status": "$.status",
+    "client_name": "$.client_name",
+    "error": "$.error"
+  }
+}

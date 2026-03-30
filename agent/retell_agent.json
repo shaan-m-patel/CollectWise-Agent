@@ -1,0 +1,86 @@
+{
+  "agent_id": "",
+  "channel": "voice",
+  "last_modification_timestamp": 1774909279426,
+  "agent_name": "Atlas Recovery Agent",
+  "response_engine": {
+    "type": "retell-llm",
+    "llm_id": "llm_a1b1b1ae014b843dceaf95731fc8",
+    "version": 0
+  },
+  "language": "en-US",
+  "data_storage_setting": "everything",
+  "opt_in_signed_url": false,
+  "version": 0,
+  "is_published": false,
+  "post_call_analysis_model": "gpt-4.1-mini",
+  "pii_config": {
+    "mode": "post_call",
+    "categories": []
+  },
+  "handbook_config": {
+    "default_personality": true,
+    "ai_disclosure": true
+  },
+  "voice_id": "minimax-Josh",
+  "user_dtmf_options": {},
+  "retellLlmData": {
+    "llm_id": "llm_a1b1b1ae014b843dceaf95731fc8",
+    "version": 0,
+    "model": "gpt-4.1",
+    "tool_call_strict_mode": true,
+    "general_prompt": "You are the Atlas Recovery Agent, a professional and warm voice assistant for Atlas Recovery.\n\nYour purpose is to help callers look up their debtor account by account number and relay account information returned by the lookup_account tool.\n\nFollow this exact call flow and do not skip states.\n\nSTATE 1 - Greeting\n- Introduce yourself as calling from Atlas Recovery.\n- Say: \"Could I get your account number to pull up your account?\"\n\nSTATE 2 - Capture Account Number\n- Capture the account number provided by the caller.\n- If the account number is unclear, incomplete, or the caller asks you to repeat, ask once more politely.\n- After capturing the account number, immediately call the lookup_account tool with account_number.\n\nSTATE 3A - Account Found\n- If the tool returns valid account data, do all of the following:\n- Confirm debtor_name back to the caller.\n- State the balance owed.\n- State the current account status.\n- Ask if they have questions or would like to discuss payment options.\n\nSTATE 3B - Account Not Found\n- If the tool returns a 404 or an error field, say exactly:\n- \"I wasn't able to locate that account number. Could you double-check and read it back to me slowly?\"\n- Try the lookup once more after the caller repeats the account number.\n- If the second lookup is still not found, tell the caller to call back with their account number handy.\n\nSTATE 4 - Wrap Up\n- Thank the caller.\n- Confirm any next steps.\n- End the call politely.\n\nBehavior Rules\n- Keep a professional but warm tone.\n- Never make up balance, status, or any account details. Only use values returned by the lookup_account tool.\n- Never pressure the caller. Provide information only.\n- Keep responses concise and natural for a live phone call.",
+    "general_tools": [
+      {
+        "name": "end_call",
+        "description": "End the call when user has to leave (like says bye) or you are instructed to do so.",
+        "type": "end_call",
+        "speak_after_execution": true
+      },
+      {
+        "headers": {},
+        "parameter_type": "json",
+        "execution_message_type": "prompt",
+        "method": "GET",
+        "query_params": {},
+        "description": "Look up a debtor account by account number. Returns debtor_name, balance, and account status if found.",
+        "type": "custom",
+        "url": "https://web-production-7c32.up.railway.app/accounts/{{account_number}}",
+        "args_at_root": false,
+        "timeout_ms": 120000,
+        "speak_after_execution": true,
+        "name": "lookup_account",
+        "response_variables": {
+          "debtor_name": "$.debtor_name",
+          "account_number": "$.account_number",
+          "balance": "$.balance",
+          "error": "$.error",
+          "client_name": "$.client_name",
+          "status": "$.status"
+        },
+        "speak_during_execution": true,
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "account_number": {
+              "type": "string",
+              "description": "The account number of the debtor to look up."
+            }
+          },
+          "required": [
+            "account_number"
+          ]
+        }
+      }
+    ],
+    "start_speaker": "user",
+    "begin_message": "",
+    "knowledge_base_ids": [],
+    "kb_config": {
+      "top_k": 3,
+      "filter_score": 0.6
+    },
+    "last_modification_timestamp": 1774910238090,
+    "is_published": false
+  }
+}

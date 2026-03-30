@@ -1,0 +1,16 @@
+{
+  "name": "collectwise-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "ingest": "node src/ingest.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

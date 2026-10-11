@@ -1,14 +1,18 @@
 {
   "name": "lookup_account",
-  "description": "Looks up a debtor account by account number during a call and returns account details or a not-found error.",
+  "description": "Looks up a debtor account by account number. The server checks the platform Authorization header and the inbound caller ID. It returns debtor name, balance, and status only when the caller ID matches the account. It does not return a phone number.",
   "url": "https://web-production-7c32.up.railway.app/accounts/{{account_number}}",
   "method": "GET",
+  "headers": {
+    "Authorization": "Bearer <API_BEARER_TOKEN>",
+    "X-Caller-Number": "{{user_number}}"
+  },
   "parameters": {
     "type": "object",
     "properties": {
       "account_number": {
         "type": "string",
-        "description": "The caller's account number to look up, captured exactly as spoken or entered."
+        "description": "The account number captured exactly as the caller said it. Do not add punctuation, spaces, or a phone number."
       }
     },
     "required": ["account_number"]

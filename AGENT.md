@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 **Validation rules (per row):**
 ```
 IF account_number is missing or empty  → SKIP row, log warning with line number
+IF account_number is not ^[A-Za-z0-9_-]{1,50}$ → SKIP row, log warning with line number
 IF balance is present but not numeric  → SKIP row, log warning with line number
 IF debtor_name is missing or empty     → SKIP row, log warning with line number
 ALL other missing fields               → allow NULL, do not skip
@@ -153,30 +154,36 @@ VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 
 ### `GET /accounts/:accountNumber`
 
-**Happy path response (200):**
+**Auth and verification (required):**
+- `Authorization: Bearer <API_BEARER_TOKEN>` must be valid before any query. Missing or invalid credentials return 401 with the same JSON body as an unknown account.
+- `X-Caller-Number` is the inbound caller ID supplied by the voice platform (`{{user_number}}`), not a model argument.
+- Return name, balance, and status only when that caller ID matches the stored phone. Do not return `phone_number`.
+- Unknown accounts and caller-ID mismatches both return 404 `{ "error": "Account not found" }`.
+- Account numbers must match `^[A-Za-z0-9_-]{1,50}$` exactly. Do not strip characters and query a different value. Mismatches return 400 and do not query.
+- Rate-limit lookup requests.
+
+**Happy path response (200), only after bearer auth and caller-ID match:**
 ```json
 {
   "account_number": "ACC001",
-  "debtor_name": "Jane Smith",
-  "phone_number": "404-555-0101",
-  "balance": 1250.00,
+  "debtor_name": "John Smith",
+  "balance": 1300.00,
   "status": "Active",
   "client_name": "Atlas Recovery"
 }
 ```
 
-**Not found response (404):**
+**Not found or caller mismatch (404), and the same body for missing credentials (401):**
 ```json
 {
-  "error": "Account not found",
-  "account_number": "ACC999"
+  "error": "Account not found"
 }
 ```
 
 **Bad input response (400):**
 ```json
 {
-  "error": "account_number parameter is required"
+  "error": "Invalid account number format"
 }
 ```
 
@@ -200,6 +207,7 @@ VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 ```
 PORT=3000
 DB_PATH=./data/accounts.db
+API_BEARER_TOKEN=
 ```
 
 Always read `DB_PATH` from `process.env.DB_PATH` — never hardcode the DB file path.
@@ -250,18 +258,23 @@ Set Railway's start command to `npm run start:prod`.
   └─► API Lookup (Custom Tool)
         Method: GET
         URL: https://YOUR-PUBLIC-URL/accounts/{{account_number}}
+        Header Authorization: Bearer <API_BEARER_TOKEN>
+        Header X-Caller-Number: {{user_number}}
+        The model sends account_number only. Caller ID is not a tool argument.
         On success (200) → branch: Account Found
-        On 404           → branch: Account Not Found
+        On 401 or 404    → branch: Account Not Found (same caller-facing words)
         On error         → branch: System Error
 
   └─► Account Found
+        Speak name, balance, and status only from the tool response.
         "I found your account. Your current balance is ${{balance}}
          and your account status is {{status}}.
          Is there anything else I can help you with?"
 
   └─► Account Not Found
-        "I wasn't able to locate an account with the number {{account_number}}.
-         Please double-check the number and call back, or speak with an agent."
+        Do not say whether the account exists or whether the caller ID matched.
+        "I wasn't able to locate that account number.
+         Please double-check the number and call back from the phone number on the account."
 
   └─► System Error
         "I'm sorry, I'm having trouble accessing account information right now.
@@ -323,16 +336,25 @@ The README must include these sections in order:
 
 **Example style reference:**
 ```js
-async function lookupAccount(req, res) {
-  const { accountNumber } = req.params
-  if (!accountNumber) {
-    return res.status(400).json({ error: 'account_number parameter is required' })
+function lookupAccount(req, res) {
+  if (!isAuthorized(req)) {
+    return res.status(401).json({ error: 'Account not found' })
+  }
+  const accountNumber = req.params.accountNumber
+  if (!isValidAccountNumber(accountNumber)) {
+    return res.status(400).json({ error: 'Invalid account number format' })
   }
   const account = db.prepare('SELECT * FROM accounts WHERE account_number = ?').get(accountNumber)
-  if (!account) {
-    return res.status(404).json({ error: 'Account not found', account_number: accountNumber })
+  if (!account || !phonesMatch(account.phone_number, req.get('x-caller-number'))) {
+    return res.status(404).json({ error: 'Account not found' })
   }
-  return res.json(account)
+  return res.json({
+    account_number: account.account_number,
+    debtor_name: account.debtor_name,
+    balance: account.balance,
+    status: account.status,
+    client_name: account.client_name
+  })
 }
 ```
 
@@ -342,14 +364,13 @@ async function lookupAccount(req, res) {
 
 Do not add any of the following — they are explicitly out of scope:
 
-- Authentication / API keys
 - Pagination or filtering on the accounts endpoint
 - A CSV upload HTTP endpoint (Atlas uploads files manually / via redeploy)
 - Any frontend or admin UI
-- Unit or integration tests
 - TypeScript
 - Docker or containerization
-- Rate limiting
+
+Account lookup must keep its bearer token, per-IP rate limit, exact account-number pattern, and caller-ID check. Do not remove those controls.
 
 ---
 

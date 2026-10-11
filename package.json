@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node src/server.js",
     "ingest": "node src/ingest.js --file data/atlas_inventory.csv",
-    "start:prod": "node src/start.js"
+    "start:prod": "node src/start.js",
+    "test": "node scripts/security-check.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",

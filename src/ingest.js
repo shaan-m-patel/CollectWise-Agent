@@ -2,6 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const { parse } = require('csv-parse/sync')
 const { getDb } = require('./db/init')
+const { isValidAccountNumber } = require('./accountNumber')
 
 function getFilePathFromArgs(args) {
   const fileFlagIndex = args.indexOf('--file')
@@ -55,6 +56,12 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
     if (!accountNumber) {
       skippedRows += 1
       console.warn(`[INGEST] Skipping row ${rowNumber}: missing account_number`)
+      continue
+    }
+
+    if (!isValidAccountNumber(accountNumber)) {
+      skippedRows += 1
+      console.warn(`[INGEST] Skipping row ${rowNumber}: account_number contains characters the lookup API does not accept`)
       continue
     }
 
